@@ -17,6 +17,10 @@ import matplotlib.pyplot as plt
 # shape and layer libraries
 import fiona
 from shapely.geometry import MultiPolygon, shape, point, box
+from descartes import PolygonPatch
+from matplotlib.collections import PatchCollection
+from mpl_toolkits.basemap import Basemap
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 # data wrangling libraries
 import urllib2
@@ -896,17 +900,18 @@ def generateVarTables (listOfDates, dictOfTables, n_stations):
     len_listOfDates=len(listOfDates) # number of dates
     
     # Create arrays of for each variable of interest (Tmin, Tmax, Precip).
-    temp_min_df=pd.DataFrame(pd.nan, columns=sorted(dictOfTables.keys()), index=listOfDates)
-    temp_max_df=pd.DataFrame()
-    precip_df=pd.DataFrame()
-    wind_df=pd.DataFrame()
+    # Rows are dates of analysis and columns are the station number
+    temp_min_np=np.empty([len_listOfDates,n_stations])
+    temp_max_np=np.empty([len_listOfDates,n_stations])
+    precip_np=np.empty([len_listOfDates,n_stations])
+    wind_np=np.empty([len_listOfDates,n_stations])
     
     # fill in each array with values from each station
     for i in sorted(dictOfTables.keys()):
-        temp_min_df[i]=dictOfTables[i].tmin_c.values.astype(float)
-        temp_max_df[i]=dictOfTables[i].tmax_c.values.astype(float)
-        precip_df[i]=dictOfTables[i].precip_mm.values.astype(float)
-        wind_df[i]=dictOfTables[i].wind_m_s.values.astype(float)
+        temp_min_np[:,i]=dictOfTables[i].tmin_c.values.astype(float)
+        temp_max_np[:,i]=dictOfTables[i].tmax_c.values.astype(float)
+        precip_np[:,i]=dictOfTables[i].precip_mm.values.astype(float)
+        wind_np[:,i]=dictOfTables[i].wind_m_s.values.astype(float)
         
     # generate each variable dataframe with rows as dates and columns as stations
     temp_min_df=pd.DataFrame(temp_min_np, columns=sorted(dictOfTables.keys()), index=listOfDates)    
@@ -1231,7 +1236,7 @@ def gridclim_dict(gridclim_folder,
     analysis_elev_min_cutoff = analysis_stations_info.ELEV.tail(int(x)).max()    
     analysis_elev_min = analysis_stations_info.ELEV.min() # minimum elevaiton of stations in analysis
     
-    # create list of dataframe
+    # create dictionary of dataframe
     all_daily = read_in_all_files(map_df=climate_locations_df,
                                   dataset=gridclim_folder,
                                   file_start_date=file_start_date,
@@ -1312,6 +1317,7 @@ def compute_elev_diffs(df_dict, df_str, gridclimname1, prefix1, prefix2a='meanmo
     for each1 in prefix1:
         comp_dict[str(each1)+df_str] = df_dict[prefix2a+each1+gridclimname1]-df_dict[prefix2b+each1+gridclimname1]
     return comp_dict
+
 
 def monthlyBiasCorrection_deltaTratioP_Livneh_METinput(homedir, mappingfile, BiasCorr,
                                                  lowrange='0to1000m', LowElev=range(0,1000),
@@ -1415,10 +1421,9 @@ def monthlyBiasCorrection_deltaTratioP_Livneh_METinput(homedir, mappingfile, Bia
     print('mission complete.')
     print('this device will now self-destruct.')
     print('just kidding.')
-    
-def monthlyBiasCorrection_WRFlongtermmean_elevationbins_METinput(homedir,
-                                                 mappingfile,
-                                                 BiasCorr,
+
+
+def monthlyBiasCorrection_WRFlongtermmean_elevationbins_METinput(homedir, mappingfile, BiasCorr,
                                                  lowrange='0to1000m', LowElev=range(0,1000),
                                                  midrange='1000to1500m', MidElev=range(1001,1501),
                                                  highrange='1500to3000m', HighElev=range(1501,3000),
@@ -1513,7 +1518,8 @@ def monthlyBiasCorrection_WRFlongtermmean_elevationbins_METinput(homedir,
     print('mission complete.')
     print('this device will now self-destruct.')
     print('just kidding.')
-    
+
+
 def switchUpVICSoil(input_file=None,
                     output_file='soil',
                     mappingfile=None,
@@ -1535,6 +1541,7 @@ def switchUpVICSoil(input_file=None,
     soil_base.to_csv(output_file, header=False,index=False,sep="\t")
     print(str(soil_base[0].sum()) +' VIC grid cells have successfully been switched up.') 
     print('Check your home directory for your new VIC soil model input set to your list of Lat/Long grid centroids.')
+    
     
 def makebelieve(homedir, mappingfile, BiasCorr,
                 lowrange='0to1000m', LowElev=range(0,1000),
@@ -1810,7 +1817,7 @@ def plot_meanTmax(dictionary, loc_name, start_date, end_date):
     plt.show()
     
     
-def renderWatershed(shapefile):
+def renderWatershed(shapefile, outfilepath):
     fig = plt.figure(figsize=(10,5), dpi=1000)
     ax1 = plt.subplot2grid((1,1),(0,0))
 
@@ -1846,7 +1853,7 @@ def renderWatershed(shapefile):
     coll.set_alpha(0.4)
 
     # save image
-    plt.savefig('watershed_topo.png')
+    plt.savefig(outfilepath)
     plt.show()
     
 
