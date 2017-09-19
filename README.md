@@ -36,12 +36,12 @@ This repository is intended for the sharing and distribution of open-source Pyth
   $ cp 'observatory_gridded_hydromet.py' Observatory/
 11) Change the working directory to '/notebooks/utilities/Observatory'
 12) Check file changes 
-$ git status
+  $ git status
 13) Commit the changes
   $ git add observatory_gridded_hydromet.py
   $ git commit -m 'Add message to describe these changes, if any'
   $ git push
 14) Check that the files changed
- $ git status
+  $ git status
 
  
