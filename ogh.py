@@ -314,7 +314,7 @@ def wget_download_one(fileurl):
     except:
         print('File does not exist at this URL: ' + basename)
     
-def wget_download_p(listofinterest, nworkers=20):
+def wget_download_p(listofinterest, nworkers=10):
     """
     Download files from an http domain in parallel
     """
@@ -377,7 +377,7 @@ def ftp_download_one(loci):
         print('File does not exist at this URL: '+fileurl)
 
         
-def ftp_download_p(listofinterest, nworkers=20):
+def ftp_download_p(listofinterest, nworkers=10):
     """
     Download and decompress files from an ftp domain in parallel
     """
@@ -442,7 +442,7 @@ def addCatalogToMap(outfilepath, maptable, folderpath, catalog_label):
 # Wrapper scripts
 
 
-def getClimateData_DailyMET_livneh2013(homedir, mappingfile, subdir='livneh2013/Daily_MET_1915_2011', catalog_label='livneh2013_MET'):
+def getDailyMET_livneh2013(homedir, mappingfile, subdir='livneh2013/Daily_MET_1915_2011/raw', catalog_label='dailymet_livneh2013'):
     """
     Get the Livneh el al., 2013 Daily Meteorology files of interest using the reference mapping file
     """
@@ -467,7 +467,7 @@ def getClimateData_DailyMET_livneh2013(homedir, mappingfile, subdir='livneh2013/
     return filedir
 
 
-def getClimateData_DailyMET_livneh2015(homedir, mappingfile, subdir='livneh2015/Daily_MET_1950_2013', catalog_label='livneh2015_MET'):
+def getDailyMET_livneh2015(homedir, mappingfile, subdir='livneh2015/Daily_MET_1950_2013/raw', catalog_label='dailymet_livneh2015'):
     """
     Get the Livneh el al., 2015 Daily Meteorology files of interest using the reference mapping file
     """
@@ -480,7 +480,7 @@ def getClimateData_DailyMET_livneh2015(homedir, mappingfile, subdir='livneh2015/
     
     # compile the longitude and latitude points
     locations = compile_dailyMET_Livneh2015_locations(maptable)
-
+    
     # Download the files
     ftp_download_p(locations)
     
@@ -492,7 +492,7 @@ def getClimateData_DailyMET_livneh2015(homedir, mappingfile, subdir='livneh2015/
     return filedir
 
 
-def getClimateData_DailyMET_bcLivneh2013(homedir, mappingfile, subdir='livneh2013/Daily_MET_1915_2011/bc', catalog_label='livneh2013_METbc'):
+def getDailyMET_bcLivneh2013(homedir, mappingfile, subdir='livneh2013/Daily_MET_1915_2011/bc', catalog_label='dailymet_bclivneh2013'):
     """
     Get the Livneh el al., 2013 bias corrected Daily Meteorology files of interest using the reference mapping file
     """
@@ -517,7 +517,7 @@ def getClimateData_DailyMET_bcLivneh2013(homedir, mappingfile, subdir='livneh201
     return filedir
 
 
-def getClimateData_DailyVIC_livneh2013(homedir, mappingfile, subdir='livneh2013/Daily_VIC_1915_2011', catalog_label='livneh2013_VIC'):
+def getDailyVIC_livneh2013(homedir, mappingfile, subdir='livneh2013/Daily_VIC_1915_2011', catalog_label='dailyvic_livneh2013'):
     """
     Get the Livneh el al., 2013 Daily VIC files of interest using the reference mapping file
     """
@@ -556,7 +556,7 @@ def getClimateData_DailyVIC_livneh2013(homedir, mappingfile, subdir='livneh2013/
     return filedir
 
 
-def getClimateData_DailyVIC_livneh2015(homedir, mappingfile, subdir='livneh2015/Daily_VIC_1950_2013', catalog_label='livneh2015_VIC'):
+def getDailyVIC_livneh2015(homedir, mappingfile, subdir='livneh2015/Daily_VIC_1950_2013', catalog_label='dailyvic_livneh2015'):
     """
     Get the Livneh el al., 2015 Daily VIC files of interest using the reference mapping file
     """
@@ -581,7 +581,7 @@ def getClimateData_DailyVIC_livneh2015(homedir, mappingfile, subdir='livneh2015/
     return filedir
 
 
-def getClimateData_DailyMET_rawWRF(homedir, mappingfile, subdir='Salathe2014/WWA_1950_2010/raw', catalog_label='Salathe2014_WRFraw'):
+def getDailyWRF_salathe2014(homedir, mappingfile, subdir='Salathe2014/WWA_1950_2010/raw', catalog_label='dailywrf_salathe2014'):
     """
     Get the Salathe el al., 2014 raw Daily WRF files of interest using the reference mapping file
     """
@@ -606,7 +606,7 @@ def getClimateData_DailyMET_rawWRF(homedir, mappingfile, subdir='Salathe2014/WWA
     return filedir
 
 
-def getClimateData_DailyMET_bcWRF(homedir, mappingfile, subdir='Salathe2014/WWA_1950_2010/bc', catalog_label='Salathe2014_WRFbc'):
+def getDailyWRF_bcsalathe2014(homedir, mappingfile, subdir='Salathe2014/WWA_1950_2010/bc', catalog_label='dailywrf_bcsalathe2014'):
     """
     Get the Salathe el al., 2014 bias corrected Daily WRF files of interest using the reference mapping file
     """
@@ -647,16 +647,15 @@ def filesWithPath(folderpath):
 
 def compareonvar(map_df, colvar='all'):
     # apply row-wise inclusion based on a subset of columns
+    if colvar is None:
+        return map_df
+    
     if colvar is 'all':
         # compare on all columns except the station info
-        df = map_df.loc[:, map_df.columns.drop(['FID','LAT','LONG_','ELEV'])]
+        return map_df.dropna()
     else:
         # compare on only the listed columns
-        df = map_df.loc[:,colvar]
-        
-    # include if there are no NA values present in row
-    row_ind = df.apply(lambda x: False if sum(pd.isnull(x))>0 else True, axis=1)
-    return map_df.loc[row_ind,:]
+        return map_df.dropna(subset=colvar)
 
 
 def mappingfileToDF(mappingfile, colvar='all'):
@@ -677,36 +676,50 @@ def mappingfileToDF(mappingfile, colvar='all'):
     return map_df, len(map_df)
 
 
-def read_in_all_files(map_df, dataset, file_start_date, file_end_date, subset_start_date, subset_end_date, file_colnames=['precip_mm','tmax_c', 'tmin_c', 'wind_m_s']):
-    # Read in files based on dataset.
-    # map_df should be subsetted to just the files that meet a comparison criteria between datasets
-    # the output df_dict would have FID, LAT, and LONG_ as keys, and the dataframe as the dictionary value
+def read_in_all_files(map_df, dataset, metadata, file_start_date, file_end_date, file_time_step, file_colnames, subset_start_date, subset_end_date):
+    """
+    Read in files based on dataset label
+    
+    map_df: (dataframe) the mappingfile clipped to the subset that will be read-in
+    dataset: (str) the name of the dataset catalogged into map_df
+    metadata (str) the dictionary that contains the metadata explanations; default is None
+    file_colnames: (list) the list of shorthand variables; default is None
+    file_start_date: (date) the start date of the files that will be read-in; default is None
+    file_end_date: (date) the end date for the files that will be read in; default is None
+    file_time_step: (str) the timedelta code that represents the difference between time points; default is 'D' (daily)    
+    subset_start_date: (date) the start date of a date range of interest
+    subset_end_date: (date) the end date of a date range of interest
+    """
+    # extract metadata if the information are not provided
+    if pd.notnull(metadata):
+        
+        if pd.isnull(file_start_date):
+            file_start_date = metadata[dataset]['date_range']['start']
+        
+        if pd.isnull(file_end_date):
+            file_end_date = metadata[dataset]['date_range']['end']
 
-    # select the files to use
-    row_ind = map_df[dataset].apply(lambda x: not pd.isnull(x))
-    file_subset = map_df.loc[row_ind,['FID','LAT','LONG_','ELEV']+[dataset]]
-    
-    # Identify separator for files in the dataset
-    sample = pd.read_table(file_subset.loc[0,dataset], header=None, sep='\t', nrows=1)
-    if len(sample.columns) != 1:
-        separator = '\t'
-    else:
-        separator = '\s+'
-    
-    #initialize matrix and time sequence
+        if pd.isnull(file_time_step):
+            file_time_step = metadata[dataset]['date_range']['time_step']
+
+        file_colnames = metadata[dataset]['variable_list']
+        file_delimiter = metadata[dataset]['delimiter']
+   
+    #initialize dictionary and time sequence
     df_dict=dict()
-    met_daily_dates=pd.date_range(file_start_date, file_end_date, freq='D') # daily
+    met_daily_dates=pd.date_range(file_start_date, file_end_date, freq=file_time_step) # daily
         
     # import data for all climate stations
-    for ind, row in file_subset.iterrows():
-        df_dict[tuple(row[['FID','LAT','LONG_']].tolist())] = pd.read_table(row[dataset], header=None, sep=separator, names=file_colnames)
+    for ind, row in map_df.iterrows():
+        tmp = pd.read_table(row[dataset], header=None, delimiter=file_delimiter, names=file_colnames)
+        tmp.set_index(met_daily_dates, inplace=True)
         
-        # set the index as the date
-        df_dict[tuple(row[['FID','LAT','LONG_']].tolist())].set_index(met_daily_dates, inplace=True)
-        df_dict[tuple(row[['FID','LAT','LONG_']].tolist())] = df_dict[tuple(row[['FID','LAT','LONG_']].tolist())].ix[subset_start_date:subset_end_date]
+        # subset to the date range of interest (default is file date range)
+        tmp = tmp.ix[subset_start_date:subset_end_date]
         
-    # display first 10 lines of the last dataframe
-    print df_dict[tuple(row[['FID','LAT','LONG_']].tolist())].head(10)
+        # set row indices
+        df_dict[tuple(row[['FID','LAT','LONG_']].tolist())] = tmp
+        
     return df_dict
     
 
@@ -886,46 +899,63 @@ def aggregate_space_time_sum(VarTable, n_stations, start_date, end_date):
 
 # ### Data Processing functions
 
-# In[ ]:
 
-# Determine dates (rows) and stations (columns). Number of stations 
-# is the same for each dataset but number of dates may be different
-def generateVarTables (listOfDates, dictOfTables, n_stations):
-    # NOTE: listOfTable must contain:
-    # tmin_c
-    # tmax_c
-    # precip_mm
-    # wind_m_s
+def generateVarTables(file_dict, dataset, metadata):
+    """
+    Slice the files by their common variable
     
-    len_listOfDates=len(listOfDates) # number of dates
+    all_files: (dict) a dictionary of dataframes for each tabular datafile
+    dataset: (str) the name of the dataset
+    metadata (dict) the dictionary that contains the metadata explanations; default is None
+    """
+    # combine the files into a pandas panel
+    panel = pd.Panel.from_dict(file_dict)
+
+    # initiate output dictionary
+    df_dict = dict()
     
-    # Create arrays of for each variable of interest (Tmin, Tmax, Precip).
-    # Rows are dates of analysis and columns are the station number
-    temp_min_np=np.empty([len_listOfDates,n_stations])
-    temp_max_np=np.empty([len_listOfDates,n_stations])
-    precip_np=np.empty([len_listOfDates,n_stations])
-    wind_np=np.empty([len_listOfDates,n_stations])
-    
-    # fill in each array with values from each station
-    for i in sorted(dictOfTables.keys()):
-        temp_min_np[:,i]=dictOfTables[i].tmin_c.values.astype(float)
-        temp_max_np[:,i]=dictOfTables[i].tmax_c.values.astype(float)
-        precip_np[:,i]=dictOfTables[i].precip_mm.values.astype(float)
-        wind_np[:,i]=dictOfTables[i].wind_m_s.values.astype(float)
+    # slice the panel for each variable in list
+    for eachvar in metadata[dataset]['variable_list']:
+        df_dict['_'.join([eachvar, dataset])] = panel.xs(key=eachvar, axis=2)
         
-    # generate each variable dataframe with rows as dates and columns as stations
-    temp_min_df=pd.DataFrame(temp_min_np, columns=sorted(dictOfTables.keys()), index=listOfDates)    
-    temp_max_df=pd.DataFrame(temp_max_np, columns=sorted(dictOfTables.keys()), index=listOfDates)    
-    precip_df=pd.DataFrame(precip_np, columns=sorted(dictOfTables.keys()), index=listOfDates)    
-    wind_df=pd.DataFrame(wind_np, columns=sorted(dictOfTables.keys()), index=listOfDates)
-    
-    # Create average temperature data frame as the average of Tmin and Tmax
-    temp_avg_df=pd.DataFrame((temp_min_np+temp_max_np)/2, columns=sorted(dictOfTables.keys()), index=listOfDates)
-    
-    # generate each variable dataframe with rows as dates and columns as stations
-    
-    
-    return(temp_min_df, temp_max_df, precip_df, wind_df, temp_avg_df)
+    return df_dict
+
+
+#def generateVarTables (listOfDates, dictOfTables, n_stations):
+#    # NOTE: listOfTable must contain:
+#    # tmin_c
+#    # tmax_c
+#    # precip_mm
+#    # wind_m_s
+#    
+#    len_listOfDates=len(listOfDates) # number of dates
+#    
+#    # Create arrays of for each variable of interest (Tmin, Tmax, Precip).
+#    # Rows are dates of analysis and columns are the station number
+#    temp_min_np=np.empty([len_listOfDates,n_stations])
+#    temp_max_np=np.empty([len_listOfDates,n_stations])
+#    precip_np=np.empty([len_listOfDates,n_stations])
+#    wind_np=np.empty([len_listOfDates,n_stations])
+#    
+#    # fill in each array with values from each station
+#    for i in sorted(dictOfTables.keys()):
+#        temp_min_np[:,i]=dictOfTables[i].tmin_c.values.astype(float)
+#        temp_max_np[:,i]=dictOfTables[i].tmax_c.values.astype(float)
+#        precip_np[:,i]=dictOfTables[i].precip_mm.values.astype(float)
+#        wind_np[:,i]=dictOfTables[i].wind_m_s.values.astype(float)
+#        
+#    # generate each variable dataframe with rows as dates and columns as stations
+#    temp_min_df=pd.DataFrame(temp_min_np, columns=sorted(dictOfTables.keys()), index=listOfDates)    
+#    temp_max_df=pd.DataFrame(temp_max_np, columns=sorted(dictOfTables.keys()), index=listOfDates)    
+#    precip_df=pd.DataFrame(precip_np, columns=sorted(dictOfTables.keys()), index=listOfDates)    
+#    wind_df=pd.DataFrame(wind_np, columns=sorted(dictOfTables.keys()), index=listOfDates)
+#    
+#    # Create average temperature data frame as the average of Tmin and Tmax
+#    temp_avg_df=pd.DataFrame((temp_min_np+temp_max_np)/2, columns=sorted(dictOfTables.keys()), index=listOfDates)
+#    
+#    # generate each variable dataframe with rows as dates and columns as stations
+#       
+#    return(temp_min_df, temp_max_df, precip_df, wind_df, temp_avg_df)
 
 # compare two date sets for the start and end of the overlapping dates
 def overlappingDates(date_set1, date_set2):
