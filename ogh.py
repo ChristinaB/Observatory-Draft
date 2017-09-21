@@ -35,6 +35,8 @@ print('Version '+datetime.fromtimestamp(os.path.getmtime('ogh.py')).strftime('%Y
 def getFullShape(shapefile):
     """
     Generate a MultiPolygon to represent each shape/polygon within the shapefile
+    
+    shapefile: (dir) a path to the ESRI .shp shapefile
     """
     shp = fiona.open(shapefile)
     mp = [shape(pol['geometry']) for pol in shp]
@@ -46,6 +48,8 @@ def getFullShape(shapefile):
 def getShapeBbox(polygon):
     """
     Generate a geometric box to represent the bounding box for the polygon, shapefile connection, or MultiPolygon
+    
+    polygon: (geometry) a geometric polygon, MultiPolygon, or shapefile connection
     """
     # identify the cardinal bounds
     minx, miny, maxx, maxy = polygon.bounds
@@ -56,6 +60,8 @@ def getShapeBbox(polygon):
 def readShapefileTable(shapefile):
     """
     read in the datatable captured within the shapefile properties
+    
+    shapefile: (dir) a path to the ESRI .shp shapefile
     """
     shp = fiona.open(shapefile)
     centroid = [eachpol['properties'] for eachpol in shp]
@@ -69,6 +75,14 @@ def filterPointsinShape(shape,
                         buffer_distance=0.06, buffer_resolution=16, labels=['LAT', 'LONG_', 'ELEV']):
     """
     filter for datafiles that can be used
+    
+    shape: (geometry) a geometric polygon or MultiPolygon
+    points_lat: (series) a series of latitude points in WGS84 projection
+    points_lon: (series) a series of longitude points in WGS84 projection
+    points_elev: (series) a series of elevation points in meters; optional - default is None
+    buffer_distance: (float64) a numerical multiplier to increase the geodetic boundary area
+    buffer_resolution: (float64) the increments between geodetic longlat degrees
+    labels: (list) a list of preferred labels for latitude, longitude, and elevation
     """
     # add buffer region
     region = shape.buffer(buffer_distance, resolution=buffer_resolution)
@@ -87,6 +101,10 @@ def filterPointsinShape(shape,
 def scrapeurl(url, startswith=None, hasKeyword=None):
     """
     scrape the gridded datafiles from a url of interest
+    
+    url: (str) the web folder path to be scraped for hyperlink references
+    startswith: (str) the starting keywords for a webpage element; default is None
+    hasKeyword: (str) keywords represented in a webpage element; default is None
     """
     # grab the html of the url, and prettify the html structure
     page = urllib2.urlopen(url).read()
@@ -94,7 +112,7 @@ def scrapeurl(url, startswith=None, hasKeyword=None):
     page_soup.prettify()
 
     # loop through and filter the hyperlinked lines
-    if startswith is None:
+    if pd.isnull(startswith):
         temp = [anchor['href'] for anchor in page_soup.findAll('a', href=True) if hasKeyword in anchor['href']]
     else:
         temp = [anchor['href'] for anchor in page_soup.findAll('a', href=True) if anchor['href'].startswith(startswith)]
@@ -105,17 +123,15 @@ def scrapeurl(url, startswith=None, hasKeyword=None):
     return(temp)
 
 
-def treatgeoself(shapefile, NAmer, folder_path=os.getcwd(), outfilename='monkeysonatree.csv', buffer_distance=0.06):
+def treatgeoself(shapefile, NAmer, folder_path=os.getcwd(), outfilename='mappingfile.csv', buffer_distance=0.06):
     """
     TreatGeoSelf to some [data] lovin'!
     
-    :param shapefile:
-    :param Namer:
-    :param Webservice:
-    :param file_prefix:
-    :param folder_path:
-    :param outfilename:
-    :param buffer_distance:
+    shapefile: (dir) the path to an ESRI shapefile for the region of interest
+    Namer: (dir) the path to an ESRI shapefile, which has each 1/16th coordinate and elevation information from a DEM
+    folder_path: (dir) the destination folder path for the mappingfile output; default is the current working directory
+    outfilename: (str) the name of the output file; default name is 'mappingfile.csv'
+    buffer_distance: (float64) the multiplier to be applied for increasing the geodetic boundary area; default is 0.06
     """
     
     # read shapefile into a multipolygon shape-object
@@ -146,6 +162,8 @@ def treatgeoself(shapefile, NAmer, folder_path=os.getcwd(), outfilename='monkeys
 def mapContentFolder(resid):
     """
     map the content folder within HydroShare
+    
+    resid: (str) a string hash that represents the hydroshare resource that has been migrated
     """
     path = os.path.join('/home/jovyan/work/notebooks/data', str(resid), str(resid), 'data/contents')
     return path
@@ -157,6 +175,8 @@ def mapContentFolder(resid):
 def compile_bc_Livneh2013_locations(maptable):
     """
     compile a list of file URLs for bias corrected Livneh et al. 2013 (CIG)
+
+    maptable: (dataframe) a dataframe that contains the FID, LAT, LONG_, and ELEV for each interpolated data file
     """
     locations=[]
     for ind, row in maptable.iterrows():
@@ -169,6 +189,8 @@ def compile_bc_Livneh2013_locations(maptable):
 def compile_Livneh2013_locations(maptable):
     """
     compile a list of file URLs for Livneh et al. 2013 (CIG)
+    
+    maptable: (dataframe) a dataframe that contains the FID, LAT, LONG_, and ELEV for each interpolated data file
     """
     locations=[]
     for ind, row in maptable.iterrows():
@@ -184,6 +206,8 @@ def compile_Livneh2013_locations(maptable):
 def compile_VICASCII_Livneh2015_locations(maptable):
     """
     compile the list of file URLs for Livneh et al., 2015 VIC.ASCII outputs
+    
+    maptable: (dataframe) a dataframe that contains the FID, LAT, LONG_, and ELEV for each interpolated data file
     """
     locations=[]
     for ind, row in maptable.iterrows():
@@ -196,6 +220,8 @@ def compile_VICASCII_Livneh2015_locations(maptable):
 def compile_VICASCII_Livneh2013_USA_locations(maptable):
     """
     compile the list of file URLs for Livneh et al., 2013 VIC.ASCII outputs for the USA
+    
+    maptable: (dataframe) a dataframe that contains the FID, LAT, LONG_, and ELEV for each interpolated data file
     """
     locations=[]
     for ind, row in maptable.iterrows():
@@ -208,6 +234,8 @@ def compile_VICASCII_Livneh2013_USA_locations(maptable):
 def compile_VICASCII_Livneh2013_CAN_locations(maptable):
     """
     compile the list of file URLs for Livneh et al., 2013 VIC.ASCII outputs for Canada
+    
+    maptable: (dataframe) a dataframe that contains the FID, LAT, LONG_, and ELEV for each interpolated data file
     """
     locations=[]
     for ind, row in maptable.iterrows():
@@ -223,6 +251,8 @@ def compile_VICASCII_Livneh2013_CAN_locations(maptable):
 def compile_dailyMET_Livneh2013_locations(maptable):
     """
     compile the list of file URLs for Livneh et al., 2013 Daily Meteorology data
+    
+    maptable: (dataframe) a dataframe that contains the FID, LAT, LONG_, and ELEV for each interpolated data file
     """
     locations=[]
     for ind, row in maptable.iterrows():
@@ -235,6 +265,8 @@ def compile_dailyMET_Livneh2013_locations(maptable):
 def compile_dailyMET_Livneh2015_locations(maptable):
     """
     compile the list of file URLs for Livneh et al., 2015 Daily Meteorology data
+    
+    maptable: (dataframe) a dataframe that contains the FID, LAT, LONG_, and ELEV for each interpolated data file
     """
     locations=[]
     for ind, row in maptable.iterrows():
@@ -250,6 +282,8 @@ def compile_dailyMET_Livneh2015_locations(maptable):
 def compile_wrfnnrp_raw_Salathe2014_locations(maptable):
     """
     compile a list of file URLs for Salathe et al., 2014 raw WRF NNRP data
+    
+    maptable: (dataframe) a dataframe that contains the FID, LAT, LONG_, and ELEV for each interpolated data file
     """
     locations=[]
     for ind, row in maptable.iterrows():
@@ -262,6 +296,8 @@ def compile_wrfnnrp_raw_Salathe2014_locations(maptable):
 def compile_wrfnnrp_bc_Salathe2014_locations(maptable):
     """
     compile a list of file URLs for the Salathe et al., 2014 bias corrected WRF NNRP data
+    
+    maptable: (dataframe) a dataframe that contains the FID, LAT, LONG_, and ELEV for each interpolated data file
     """
     locations=[]
     for ind, row in maptable.iterrows():
@@ -277,6 +313,8 @@ def compile_wrfnnrp_bc_Salathe2014_locations(maptable):
 def ensure_dir(f):
     """
     check if the destination folder directory exists; if not, create it and set it as the working directory
+    
+    f: (dir) the directory to create and/or set as working directory
     """
     if not os.path.exists(f):
         os.makedirs(f)
@@ -286,6 +324,8 @@ def ensure_dir(f):
 def wget_download(listofinterest):
     """
     Download files from an http domain
+    
+    listofinterest: (list) a list of urls to request
     """
     # check and download each location point, if it doesn't already exist in the download directory
     for fileurl in listofinterest:
@@ -300,6 +340,8 @@ def wget_download(listofinterest):
 def wget_download_one(fileurl):
     """
     Download a file from an http domain
+    
+    fileurl: (url) a url to request
     """
     # check and download each location point, if it doesn't already exist in the download directory
     basename=os.path.basename(fileurl)
@@ -314,9 +356,12 @@ def wget_download_one(fileurl):
     except:
         print('File does not exist at this URL: ' + basename)
     
-def wget_download_p(listofinterest, nworkers=10):
+def wget_download_p(listofinterest, nworkers=20):
     """
     Download files from an http domain in parallel
+    
+    listofinterest: (list) a list of urls to request
+    nworkers: (int) the number of processors to distribute tasks; default is 10
     """
     from multiprocessing import Pool
     pool = Pool(int(nworkers))
@@ -328,6 +373,8 @@ def wget_download_p(listofinterest, nworkers=10):
 def ftp_download(listofinterest):
     """
     Download and decompress files from an ftp domain
+    
+    listofinterest: (list) a list of urls to request
     """
     for loci in listofinterest:
         
@@ -355,6 +402,8 @@ def ftp_download(listofinterest):
 def ftp_download_one(loci):
     """
     Download and decompress a file from an ftp domain
+    
+    loci: (url) a url to request
     """
     # establish path info
     fileurl=loci.replace('ftp://','') # loci is already the url with the domain already appended
@@ -377,9 +426,12 @@ def ftp_download_one(loci):
         print('File does not exist at this URL: '+fileurl)
 
         
-def ftp_download_p(listofinterest, nworkers=10):
+def ftp_download_p(listofinterest, nworkers=20):
     """
     Download and decompress files from an ftp domain in parallel
+    
+    listofinterest: (list) a list of urls to request
+    nworkers: (int) the number of processors to distribute tasks; default is 10
     """
     from multiprocessing import Pool
     pool = Pool(int(nworkers))
@@ -391,6 +443,8 @@ def ftp_download_p(listofinterest, nworkers=10):
 def decompbz2(filename):
     """
     Extract a file from a bz2 file of the same name, then remove the bz2 file
+    
+    filename: (dir) the file path for a bz2 compressed file
     """
     with open(filename.split(".bz2",1)[0], 'wb') as new_file, open(filename, 'rb') as zipfile:
         decompressor = bz2.BZ2Decompressor()
@@ -405,6 +459,8 @@ def decompbz2(filename):
 def catalogfiles(folderpath):
     """
     make a catalog of the gridded files within a folderpath
+    
+    folderpath: (dir) the folder of files to be catalogged, which have LAT and LONG_ as the last two filename features
     """
     # read in downloaded files
     temp = [eachfile for eachfile in os.listdir(folderpath) if not os.path.isdir(eachfile)]
@@ -424,6 +480,11 @@ def catalogfiles(folderpath):
 def addCatalogToMap(outfilepath, maptable, folderpath, catalog_label):
     """
     Update the mappingfile with a new column, a vector of filepaths for the downloaded files
+    
+    outfilepath: (dir) the path for the output file
+    maptable: (dataframe) a dataframe containing the FID, LAT, LONG_, and ELEV information
+    folderpath: (dir) the folder of files to be catalogged, which have LAT and LONG_ as the last two filename features
+    catalog_label: (str) the preferred name for the series of catalogged filepaths
     """
     
     # assert catalog_label as a string-object
@@ -445,6 +506,11 @@ def addCatalogToMap(outfilepath, maptable, folderpath, catalog_label):
 def getDailyMET_livneh2013(homedir, mappingfile, subdir='livneh2013/Daily_MET_1915_2011/raw', catalog_label='dailymet_livneh2013'):
     """
     Get the Livneh el al., 2013 Daily Meteorology files of interest using the reference mapping file
+    
+    homedir: (dir) the home directory to be used for establishing subdirectories
+    mappingfile: (dir) the file path to the mappingfile, which contains the LAT, LONG_, and ELEV coordinates of interest
+    subdir: (dir) the subdirectory to be established under homedir
+    catalog_label: (str) the preferred name for the series of catalogged filepaths
     """
     # check and generate DailyMET livneh 2013 data directory
     filedir=os.path.join(homedir, subdir)
@@ -470,6 +536,11 @@ def getDailyMET_livneh2013(homedir, mappingfile, subdir='livneh2013/Daily_MET_19
 def getDailyMET_livneh2015(homedir, mappingfile, subdir='livneh2015/Daily_MET_1950_2013/raw', catalog_label='dailymet_livneh2015'):
     """
     Get the Livneh el al., 2015 Daily Meteorology files of interest using the reference mapping file
+    
+    homedir: (dir) the home directory to be used for establishing subdirectories
+    mappingfile: (dir) the file path to the mappingfile, which contains the LAT, LONG_, and ELEV coordinates of interest
+    subdir: (dir) the subdirectory to be established under homedir
+    catalog_label: (str) the preferred name for the series of catalogged filepaths
     """
     # check and generate Daily MET livneh 2015 data directory
     filedir=os.path.join(homedir, subdir)
@@ -495,6 +566,11 @@ def getDailyMET_livneh2015(homedir, mappingfile, subdir='livneh2015/Daily_MET_19
 def getDailyMET_bcLivneh2013(homedir, mappingfile, subdir='livneh2013/Daily_MET_1915_2011/bc', catalog_label='dailymet_bclivneh2013'):
     """
     Get the Livneh el al., 2013 bias corrected Daily Meteorology files of interest using the reference mapping file
+    
+    homedir: (dir) the home directory to be used for establishing subdirectories
+    mappingfile: (dir) the file path to the mappingfile, which contains the LAT, LONG_, and ELEV coordinates of interest
+    subdir: (dir) the subdirectory to be established under homedir
+    catalog_label: (str) the preferred name for the series of catalogged filepaths
     """
     # check and generate baseline_corrected livneh 2013 data directory
     filedir=os.path.join(homedir, subdir)
@@ -520,6 +596,11 @@ def getDailyMET_bcLivneh2013(homedir, mappingfile, subdir='livneh2013/Daily_MET_
 def getDailyVIC_livneh2013(homedir, mappingfile, subdir='livneh2013/Daily_VIC_1915_2011', catalog_label='dailyvic_livneh2013'):
     """
     Get the Livneh el al., 2013 Daily VIC files of interest using the reference mapping file
+    
+    homedir: (dir) the home directory to be used for establishing subdirectories
+    mappingfile: (dir) the file path to the mappingfile, which contains the LAT, LONG_, and ELEV coordinates of interest
+    subdir: (dir) the subdirectory to be established under homedir
+    catalog_label: (str) the preferred name for the series of catalogged filepaths
     """
     # FIRST RUN
     # check and generate VIC_ASCII Flux model livneh 2013 data directory
@@ -541,9 +622,9 @@ def getDailyVIC_livneh2013(homedir, mappingfile, subdir='livneh2013/Daily_VIC_19
     
     # SECOND RUN
     # read in the subset of missing locations for a second run-through for the Canada webservice
-    maptable2 = pd.read_csv(mappingfile)
-    maptable2 = maptable2.loc[pd.isnull(maptable2[catalog_label]),:].reset_index(drop=True)
-    locations = compile_VICASCII_Livneh2013_CAN_locations(maptable2)
+    maptable = pd.read_csv(mappingfile)
+    maptable = maptable.loc[pd.isnull(maptable[catalog_label]),:].reset_index(drop=True)
+    locations = compile_VICASCII_Livneh2013_CAN_locations(maptable)
     
     # Download the files
     ftp_download_p(locations)
@@ -559,6 +640,11 @@ def getDailyVIC_livneh2013(homedir, mappingfile, subdir='livneh2013/Daily_VIC_19
 def getDailyVIC_livneh2015(homedir, mappingfile, subdir='livneh2015/Daily_VIC_1950_2013', catalog_label='dailyvic_livneh2015'):
     """
     Get the Livneh el al., 2015 Daily VIC files of interest using the reference mapping file
+    
+    homedir: (dir) the home directory to be used for establishing subdirectories
+    mappingfile: (dir) the file path to the mappingfile, which contains the LAT, LONG_, and ELEV coordinates of interest
+    subdir: (dir) the subdirectory to be established under homedir
+    catalog_label: (str) the preferred name for the series of catalogged filepaths
     """
     # check and generate Daily VIC.ASCII Flux model livneh 2015 data directory
     filedir=os.path.join(homedir, subdir)
@@ -584,11 +670,16 @@ def getDailyVIC_livneh2015(homedir, mappingfile, subdir='livneh2015/Daily_VIC_19
 def getDailyWRF_salathe2014(homedir, mappingfile, subdir='Salathe2014/WWA_1950_2010/raw', catalog_label='dailywrf_salathe2014'):
     """
     Get the Salathe el al., 2014 raw Daily WRF files of interest using the reference mapping file
+    
+    homedir: (dir) the home directory to be used for establishing subdirectories
+    mappingfile: (dir) the file path to the mappingfile, which contains the LAT, LONG_, and ELEV coordinates of interest
+    subdir: (dir) the subdirectory to be established under homedir
+    catalog_label: (str) the preferred name for the series of catalogged filepaths
     """
     # check and generate the Daily Meteorology raw WRF Salathe 2014 data directory
     filedir=os.path.join(homedir, subdir)
     ensure_dir(filedir)
-    
+
     # read in the longitude and latitude points from the reference mapping file
     maptable = pd.read_csv(mappingfile)
     
@@ -609,6 +700,11 @@ def getDailyWRF_salathe2014(homedir, mappingfile, subdir='Salathe2014/WWA_1950_2
 def getDailyWRF_bcsalathe2014(homedir, mappingfile, subdir='Salathe2014/WWA_1950_2010/bc', catalog_label='dailywrf_bcsalathe2014'):
     """
     Get the Salathe el al., 2014 bias corrected Daily WRF files of interest using the reference mapping file
+    
+    homedir: (dir) the home directory to be used for establishing subdirectories
+    mappingfile: (dir) the file path to the mappingfile, which contains the LAT, LONG_, and ELEV coordinates of interest
+    subdir: (dir) the subdirectory to be established under homedir
+    catalog_label: (str) the preferred name for the series of catalogged filepaths
     """
     # check and generate the Daily Meteorology bias corrected WRF Salathe 2014 data directory
     filedir=os.path.join(homedir, subdir)
@@ -637,6 +733,8 @@ def getDailyWRF_bcsalathe2014(homedir, mappingfile, subdir='Salathe2014/WWA_1950
 def filesWithPath(folderpath):
     """
     Create a list of filepaths for the files
+    
+    folderpath: (dir) the folder of interest
     """
     files =[os.path.join(folderpath, eachfile) 
             for eachfile in os.listdir(folderpath) 
@@ -646,8 +744,14 @@ def filesWithPath(folderpath):
 
 
 def compareonvar(map_df, colvar='all'):
+    """
+    subsetting a dataframe based on some columns of interest
+    
+    map_df: (dataframe) the dataframe of the mappingfile table
+    colvar: (str or list) the column(s) to use for subsetting; 'None' will return an outerjoin, 'all' will return an innerjoin
+    """
     # apply row-wise inclusion based on a subset of columns
-    if colvar is None:
+    if pd.isnull(colvar):
         return map_df
     
     if colvar is 'all':
@@ -659,6 +763,12 @@ def compareonvar(map_df, colvar='all'):
 
 
 def mappingfileToDF(mappingfile, colvar='all'):
+    """
+    read in a dataframe and subset based on columns of interest
+    
+    mappingfile: (dir) the file path to the mappingfile, which contains the LAT, LONG_, and ELEV coordinates of interest
+    colvar: (str or list) the column(s) to use for subsetting; 'None' will return an outerjoin, 'all' will return an innerjoin
+    """
     # Read in the mappingfile as a data frame
     map_df = pd.read_csv(mappingfile)
     
@@ -721,41 +831,10 @@ def read_in_all_files(map_df, dataset, metadata, file_start_date, file_end_date,
         df_dict[tuple(row[['FID','LAT','LONG_']].tolist())] = tmp
         
     return df_dict
-    
-
-# define a function to read in the met files. The start and end date of the data must be input into the function since it is not 
-# included in the raw data download.
-#def read_in_all_met_files(file_names, file_start_date, file_end_date, subset_start_date, subset_end_date, n_stations):
-#    
-#    #initialize matrix and time sequence
-#    met_daily=[]
-#    met_daily_dates=pd.date_range(file_start_date, file_end_date, freq='D') # daily
-#    
-#    # Identify separator for files in the dataset
-#    sample = pd.read_table(file_names[0], header=None, sep='\t', nrows=1)
-#    if len(sample) != 1:
-#        separator = '\t'
-#    else:
-#        separator = '\s+'
-#    
-#    # import data for all climate stations
-#    for j in range(0, n_stations):
-#        met_daily.append(pd.read_table(file_names[j], header=None, sep=separator))
-#        met_daily[j].columns=['precip_mm','tmax_c', 'tmin_c', 'wind_m_s']
-#        
-#        # set the index as the date
-#        met_daily[j].set_index(met_daily_dates, inplace=True)
-#        met_daily[j] = met_daily[j].ix[subset_start_date:subset_end_date]
-#        
-#    # display first 10 lines of the first station's data frame
-#    print met_daily[0][0:10]
-#    return(met_daily)
-    
 
 
-
-# read in a daily streamflow data set
 def read_daily_streamflow(file_name, drainage_area_m2, file_colnames=None, delimiter='\t', header='infer'):
+    # read in a daily streamflow data set    
     
     # if file_colnames are supplied, use header=None
     if file_colnames is not None:
@@ -791,18 +870,19 @@ def read_daily_streamflow(file_name, drainage_area_m2, file_colnames=None, delim
     daily_flow.columns=['flow_cfs', 'flow_cms', 'flow_mmday']
     return(daily_flow)
 
-# read in a daily precipitation data set
+
 def read_daily_precip(file_name, file_colnames=None, header='infer', delimiter='\s+'):
+    # read in a daily precipitation data set
     
     # if file_colnames are supplied, use header=None
-    if file_colnames is not None:
+    if ps.notnull(file_colnames):
         header=None
     
     # read in the data
     daily_data=pd.read_table(file_name, delimiter=delimiter, header=header) 
     
     # set columns, if header=None
-    if file_colnames is not None:
+    if pd.notnull(file_colnames):
         daily_data.columns=file_colnames
     else:
         file_colnames=list(daily_data.columns)
@@ -822,8 +902,9 @@ def read_daily_precip(file_name, file_colnames=None, header='infer', delimiter='
     daily_precip.columns=['precip_m', 'precip_mm']
     return(daily_precip)
 
-# read in a daily SNOTEL observation data set
+
 def read_daily_snotel(file_name, file_colnames=None, usecols=None, delimiter=',', header='infer'):
+    # read in a daily SNOTEL observation data set
     
     # if file_colnames are supplied, use header=None
     if file_colnames is not None:
@@ -851,6 +932,7 @@ def read_daily_snotel(file_name, file_colnames=None, usecols=None, delimiter=','
 
 
 def read_daily_coop(file_name, file_colnames=None, usecols=None, delimiter=',', header='infer'):
+    # read in a daily COOP observation data set
     
     # if file_colnames are supplied, use header=None
     if file_colnames is not None:
@@ -858,9 +940,9 @@ def read_daily_coop(file_name, file_colnames=None, usecols=None, delimiter=',', 
     
     # read in the data
     daily_data=pd.read_table(file_name, usecols=usecols, header=header, delimiter=delimiter, 
-                                 date_parser=lambda x: pd.datetime.strptime(x, '%Y%m%d'), 
-                                 parse_dates=[0],
-                                 na_values=-9999)
+                             date_parser=lambda x: pd.datetime.strptime(x, '%Y%m%d'), 
+                             parse_dates=[0], 
+                             na_values=-9999)
     
     # reset the colnames
     daily_data.columns=['Date', 'Precip_mm','Tmax_C', 'Tmin_C', 'Tavg_C']
@@ -878,24 +960,6 @@ def read_daily_coop(file_name, file_colnames=None, usecols=None, delimiter=',', 
     daily_coop=daily_data[['Precip_mm','Tmax_C', 'Tmin_C', 'Tavg_C']]
     daily_coop.set_index(row_dates, inplace=True)
     return(daily_coop)
-
-
-def aggregate_space_time_sum(VarTable, n_stations, start_date, end_date):
-    Var_daily = VarTable.loc[start_date:end_date, range(0,n_stations)]
-    
-    # Average precipitation per month at each station
-    permonth_daily=Var_daily.groupby(pd.TimeGrouper("M")).sum()
-    
-    # Average precipitation per month averaged at all stations
-    meanpermonth_daily=permonth_daily.mean(axis=1)
-    
-    # Average monthly precipitation averaged at all stations
-    meanmonth_daily= meanpermonth_daily.groupby(meanpermonth_daily.index.month).mean()
-    
-    return(Var_daily,
-          permonth_daily,
-          meanpermonth_daily,
-          meanmonth_daily)
 
 # ### Data Processing functions
 
@@ -957,6 +1021,7 @@ def generateVarTables(file_dict, gridclimname, dataset, metadata):
 #       
 #    return(temp_min_df, temp_max_df, precip_df, wind_df, temp_avg_df)
 
+
 # compare two date sets for the start and end of the overlapping dates
 def overlappingDates(date_set1, date_set2):
     # find recent date
@@ -971,6 +1036,7 @@ def overlappingDates(date_set1, date_set2):
     else:
         end_date = date_set2[-1]
     return(start_date, end_date)
+
 
 # Calculate means by 8 different methods
 def multigroupMeans(VarTable, n_stations, start_date, end_date):
@@ -1029,43 +1095,55 @@ def specialTavgMeans(VarTable):
           anom_month_daily)
 
 
-# Calculate means by 8 different methods
-def aggregate_space_time_average(VarTable, n_stations, elev_min_station, elev_mid_station,elev_max_station, start_date, end_date):
-    Var_daily = VarTable.loc[start_date:end_date, range(0,n_stations)]
+def aggregate_space_time_average(VarTable, df_dict, suffix,
+                                 elev_min_station, elev_mid_station, elev_max_station, 
+                                 start_date, end_date):
     
-    # e.g., Mean monthly temperature at each station
-    month_daily=Var_daily.groupby(Var_daily.index.month).mean() 
+    # subset dataframe to the date range of interest
+    Var_daily = VarTable.loc[start_date:end_date,:]
     
-    # e.g., Mean monthly temperature averaged for all stations in analysis
-    meanmonth_daily=Var_daily.loc[:,elev_max_station+elev_mid_station+elev_min_station].groupby(Var_daily.index.month).mean().mean(axis=1)
+    # Mean monthly temperature at each station
+    df_dict['month_'+suffix] = Var_daily.groupby(Var_daily.index.month).mean() 
+    
+    # Mean monthly temperature averaged for all stations in analysis
+    df_dict['meanmonth_'+suffix] = Var_daily.groupby(Var_daily.index.month).mean().mean(axis=1)
                 
     # e.g., Mean monthly temperature for minimum and maximum elevation stations
-    meanmonth_maxelev_daily=Var_daily.loc[:,elev_max_station].groupby(Var_daily.index.month).mean().mean(axis=1)
-    meanmonth_midelev_daily=Var_daily.loc[:,elev_mid_station].groupby(Var_daily.index.month).mean().mean(axis=1)
-    meanmonth_minelev_daily=Var_daily.loc[:,elev_min_station].groupby(Var_daily.index.month).mean().mean(axis=1)   
-         
+    df_dict['meanmonth_maxelev_'+suffix] = Var_daily.loc[:,elev_max_station].groupby(Var_daily.index.month).mean().mean(axis=1)
+    df_dict['meanmonth_midelev_'+suffix] = Var_daily.loc[:,elev_mid_station].groupby(Var_daily.index.month).mean().mean(axis=1)
+    df_dict['meanmonth_minelev_'+suffix] = Var_daily.loc[:,elev_min_station].groupby(Var_daily.index.month).mean().mean(axis=1)
                      
-    # e.g., Mean annual temperature
-    year_daily=Var_daily.groupby(Var_daily.index.year).mean()
+    # Mean annual temperature
+    df_dict['year_'+suffix] = Var_daily.groupby(Var_daily.index.year).mean()
     
-    # e.g., mean annual temperature each year for all stations
-    meanyear_daily=year_daily.mean(axis=1)
+    # mean annual temperature each year for all stations
+    df_dict['meanyear_'+suffix] = Var_daily.groupby(Var_daily.index.year).mean().mean(axis=1)
     
-    # e.g., mean annual min temperature for all years, for all stations
-    meanallyear_daily=np.nanmean(meanyear_daily)
+    # mean annual temperature for all years, for all stations
+    df_dict['meanallyear_'+suffix] = Var_daily.mean(axis=1).mean(axis=0)
     
-    # e.g., anomoly per year compared to average
-    anom_year_daily=meanyear_daily-meanallyear_daily
+    # anomaly per year compared to average
+    df_dict['anom_year_'+suffix] = df_dict['meanyear_'+suffix] - df_dict['meanallyear_'+suffix]    
+    return df_dict
+
+
+def aggregate_space_time_sum(VarTable, n_stations, start_date, end_date):
+    Var_daily = VarTable.loc[start_date:end_date, range(0,n_stations)]
     
-    return(month_daily, 
-           meanmonth_daily,
-           meanmonth_maxelev_daily, 
-           meanmonth_midelev_daily,
-           meanmonth_minelev_daily, 
-           year_daily, 
-           meanyear_daily, 
-           meanallyear_daily,
-           anom_year_daily)
+    # Average precipitation per month at each station
+    permonth_daily=Var_daily.groupby(pd.TimeGrouper("M")).sum()
+    
+    # Average precipitation per month averaged at all stations
+    meanpermonth_daily=permonth_daily.mean(axis=1)
+    
+    # Average monthly precipitation averaged at all stations
+    meanmonth_daily= meanpermonth_daily.groupby(meanpermonth_daily.index.month).mean()
+    
+    return(Var_daily,
+          permonth_daily,
+          meanpermonth_daily,
+          meanmonth_daily)
+
 
 #def aggregate_space_time_sum(VarTable, n_stations, start_date, end_date):
 #    Var_daily = VarTable.loc[start_date:end_date, range(0,n_stations)]
@@ -1083,6 +1161,7 @@ def aggregate_space_time_average(VarTable, n_stations, elev_min_station, elev_mi
 #          permonth_daily,
 #          meanpermonth_daily,
 #          meanmonth_daily)
+
 
 #def specialTavgMeans(VarTable):
 #    Var_daily = VarTable.loc[start_date:end_date, range(0,n_stations)]
@@ -1103,6 +1182,7 @@ def aggregate_space_time_average(VarTable, n_stations, elev_min_station, elev_mi
 #          meanpermonth_daily,
 #          meanallpermonth_daily,
 #          anom_month_daily)
+
 
 def plotTavg(dictionary, loc_name, start_date, end_date):
     # Plot 1: Monthly temperature analysis of Livneh data
@@ -1211,47 +1291,80 @@ def plotPavg(dictionary, loc_name, start_date, end_date):
     
     
 def gridclim_dict(gridclim_folder,
-                  gridclimname,
-                  loc_name,
                   mappingfile,
-                  min_elev=None,
-                  max_elev=None,
-                  file_start_date=None,
-                  file_end_date=None,
-                  subset_start_date=None,
-                  subset_end_date=None,
+                  loc_name=None,
+                  gridclimname=None, dataset=None, 
+                  metadata=None,
+                  min_elev=None, max_elev=None,
+                  file_start_date=None, file_end_date=None, file_time_step=None,
+                  subset_start_date=None, subset_end_date=None,
                   df_dict=None):
+    """
     # pipelined operation for assimilating data, processing it, and standardizing the plotting
     
+    gridclim_folder,
+    mappingfile,
+    loc_name=None,
+    gridclimname=None, 
+    dataset=None, 
+    metadata=None,
+    min_elev=None,
+    max_elev=None,
+    file_start_date=None,
+    file_end_date=None,
+    file_time_step=None,
+    subset_start_date=None,
+    subset_end_date=None,
+    df_dict=None
+    """
+    
+    
+    
     # generate the climate locations and n_stations
-    climate_locations_df, n_stations = mappingfileToDF(mappingfile, colvar='all')
+    locations_df, n_stations = mappingfileToDF(mappingfile, colvar='all')
     
     # generate the climate station info
-    if min_elev is None:
-        min_elev = climate_locations_df.ELEV.min()
+    if pd.isnull(min_elev):
+        min_elev = locations_df.ELEV.min()
     
-    if max_elev is None:
-        max_elev = climate_locations_df.ELEV.max()
+    if pd.isnull(max_elev):
+        max_elev = locations_df.ELEV.max()
     
-    # take liv2013 date set date range as default if file reference dates are not given
-    if file_start_date is None:
-        file_start_date = datetime.datetime(1915,1,1)
+    # extract metadata if the information are not provided
+    if pd.notnull(metadata):
         
-    if file_end_date is None:
-        file_end_date = datetime.datetime(2011,12,31)
+        if pd.isnull(file_start_date):
+            file_start_date = metadata[dataset]['date_range']['start']
         
-    # take all dates as default if subset reference dates are not given
-    if subset_start_date is None:
+        if pd.isnull(file_end_date):
+            file_end_date = metadata[dataset]['date_range']['end']
+
+        if pd.isnull(file_time_step):
+            file_time_step = metadata[dataset]['date_range']['time_step']
+
+        file_colnames = metadata[dataset]['variable_list']
+        file_delimiter = metadata[dataset]['delimiter']
+        
+    # take all defaults if subset references are null
+    if pd.isnull(subset_start_date):
         subset_start_date = file_start_date
     
-    if subset_end_date is None:
+    if pd.isnull(subset_end_date):
         subset_end_date = file_end_date
         
-    if df_dict is None:
+    # initiate output dictionary df_dict was null
+    if pd.isnull(df_dict):
         df_dict = dict()
+        
+    if pd.isnull(gridclimname):
+        if pd.notnull(dataset):
+            gridclimname=dataset
+        else:
+            print('no suffix name provided. Provide a gridclimname or dataset label.')
+            return
     
     # assemble the stations
-    analysis_stations_info = climate_locations_df[(climate_locations_df.ELEV >= min_elev) & (climate_locations_df.ELEV <= max_elev)].sort_values(by='ELEV', ascending=False)
+    analysis_stations_info = locations_df[(locations_df.ELEV >= min_elev) & (locations_df.ELEV <= max_elev)].sort_values(by='ELEV', ascending=False)
 
     # the number of stations to include into the top and bottom elevation ranges
     x = np.ceil(len(analysis_stations_info.ELEV)*.33)
@@ -1261,67 +1374,37 @@ def gridclim_dict(gridclim_folder,
     analysis_elev_min_station = analysis_stations_info.FID.tail(int(x)).tolist()
     analysis_elev_mid_station = [k for k in analysis_stations_info.FID if k not in analysis_elev_max_station + analysis_elev_min_station]
 
-    analysis_elev_max = analysis_stations_info.ELEV.max() # maximum elevaiton of stations in analysis
-    analysis_elev_max_cutoff = analysis_stations_info.ELEV.head(int(x)).min()
-    analysis_elev_min_cutoff = analysis_stations_info.ELEV.tail(int(x)).max()    
-    analysis_elev_min = analysis_stations_info.ELEV.min() # minimum elevaiton of stations in analysis
+    df_dict['analysis_elev_max'] = analysis_stations_info.ELEV.max() # maximum elevation of stations in analysis
+    df_dict['analysis_elev_max_cutoff'] = analysis_stations_info.ELEV.head(int(x)).min()
+    df_dict['analysis_elev_min_cutoff'] = analysis_stations_info.ELEV.tail(int(x)).max()
+    df_dict['analysis_elev_min'] = analysis_stations_info.ELEV.min() # minimum elevation of stations in analysis
     
     # create dictionary of dataframe
-    all_daily = read_in_all_files(map_df=climate_locations_df,
-                                  dataset=gridclim_folder,
-                                  file_start_date=file_start_date,
-                                  file_end_date=file_end_date, 
-                                  subset_start_date=subset_start_date,
-                                  subset_end_date=subset_end_date)
+    file_dict = read_in_all_files(map_df=locations_df,
+                                  dataset=dataset, 
+                                  metadata=metadata, 
+                                  file_start_date=file_start_date, file_end_date=file_end_date, 
+                                  file_time_step=file_time_step, file_colnames=file_colnames, 
+                                  subset_start_date=subset_start_date, subset_end_date=subset_end_date)
     
-    # create datetime series
-    all_daily_dates=list(all_daily[all_daily.keys()[0]].index)
-    
-    # generate the variable dataframes for Livneh 2013
-    [temp_min,
-     temp_max,
-     precip,
-     wind,
-     temp_avg] = generateVarTables(all_daily_dates, all_daily, n_stations)
-    
-    # assemble the objects to the dictionary
-    df_dict['temp_min_'+gridclimname] = temp_min
-    df_dict['temp_max_'+gridclimname] = temp_max
-    df_dict['precip_'+gridclimname] = precip
-    df_dict['wind_'+gridclimname] = wind
-    df_dict['temp_avg_'+gridclimname] = temp_avg
+    # assemble the variable dataframes to the dictionary
+    df_dict = generateVarTables(file_dict=file_dict, gridclimname=gridclimname, dataset=dataset, metadata=metadata)
     
     # loop through the dictionary to compute each aggregate_space_time_average object
     for eachvardf in df_dict.keys():
         if eachvardf.endswith(gridclimname): # and not eachvardf.startswith('precip'):
-            [month_,
-             meanmonth_,
-             meanmonth_maxelev_,
-             meanmonth_midelev_,
-             meanmonth_minelev_,
-             year_,
-             meanyear_,
-             meanallyear_,
-             anom_year_] = aggregate_space_time_average(df_dict[eachvardf], n_stations, analysis_elev_min_station, analysis_elev_mid_station, analysis_elev_max_station, subset_start_date, subset_end_date)
-
-            df_dict['month_'+eachvardf] = month_
-            df_dict['meanmonth_'+eachvardf] = meanmonth_
-            df_dict['meanmonth_maxelev_'+eachvardf] = meanmonth_maxelev_
-            df_dict['meanmonth_midelev_'+eachvardf] = meanmonth_midelev_
-            df_dict['meanmonth_minelev_'+eachvardf] = meanmonth_minelev_
-            df_dict['year_'+eachvardf] = year_
-            df_dict['meanyear_'+eachvardf] = meanyear_
-            df_dict['meanallyear_'+eachvardf] = meanallyear_
-            df_dict['anom_year_'+eachvardf] = anom_year_
-
+            df_dict = aggregate_space_time_average(VarTable=df_dict[eachvardf],
+                                                   df_dict=df_dict,
+                                                   suffix=eachvardf,
+                                                   elev_min_station=analysis_elev_min_station,
+                                                   elev_mid_station=analysis_elev_mid_station,
+                                                   elev_max_station=analysis_elev_max_station, 
+                                                   start_date=subset_start_date, 
+                                                   end_date=subset_end_date)
+            
     # generate plots
-    df_dict['analysis_elev_min'] = analysis_elev_min
-    df_dict['analysis_elev_max'] = analysis_elev_max
-    df_dict['analysis_elev_max_cutoff'] = analysis_elev_max_cutoff
-    df_dict['analysis_elev_min_cutoff'] = analysis_elev_min_cutoff
-    plotTavg(df_dict, loc_name,start_date=subset_start_date, end_date=subset_end_date)
-    plotPavg(df_dict, loc_name,start_date=subset_start_date, end_date=subset_end_date)
-    
+    #plotTavg(df_dict, loc_name,start_date=subset_start_date, end_date=subset_end_date)
+    #plotPavg(df_dict, loc_name,start_date=subset_start_date, end_date=subset_end_date)
     return df_dict
 
 def compute_diffs(df_dict, df_str, gridclimname1, gridclimname2, prefix1, prefix2='meanmonth_'):
