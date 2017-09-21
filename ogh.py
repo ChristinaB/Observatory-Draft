@@ -900,7 +900,7 @@ def aggregate_space_time_sum(VarTable, n_stations, start_date, end_date):
 # ### Data Processing functions
 
 
-def generateVarTables(file_dict, dataset, metadata):
+def generateVarTables(file_dict, gridclimname, dataset, metadata):
     """
     Slice the files by their common variable
     
@@ -909,14 +909,14 @@ def generateVarTables(file_dict, dataset, metadata):
     metadata (dict) the dictionary that contains the metadata explanations; default is None
     """
     # combine the files into a pandas panel
-    panel = pd.Panel.from_dict(file_dict)
+    panel = pd.Panel.from_dict(all_files)
 
     # initiate output dictionary
     df_dict = dict()
     
     # slice the panel for each variable in list
     for eachvar in metadata[dataset]['variable_list']:
-        df_dict['_'.join([eachvar, dataset])] = panel.xs(key=eachvar, axis=2)
+        df_dict['_'.join([eachvar, gridclimname])] = panel.xs(key=eachvar, axis=2)
         
     return df_dict
 
