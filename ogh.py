@@ -23,13 +23,13 @@ from mpl_toolkits.basemap import Basemap
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 # data wrangling libraries
-import urllib2
+# import urllib2
 import ftplib
 import wget
 import bz2
 from bs4 import BeautifulSoup as bs
 
-print('Version '+datetime.fromtimestamp(os.path.getmtime('ogh.py')).strftime('%Y-%m-%d %H:%M:%S')+' jp')
+# print('Version '+datetime.fromtimestamp(os.path.getmtime('ogh.py')).strftime('%Y-%m-%d %H:%M:%S')+' jp')
 
 
 def getFullShape(shapefile):
@@ -107,7 +107,7 @@ def scrapeurl(url, startswith=None, hasKeyword=None):
     hasKeyword: (str) keywords represented in a webpage element; default is None
     """
     # grab the html of the url, and prettify the html structure
-    page = urllib2.urlopen(url).read()
+#    page = urllib2.urlopen(url).read()
     page_soup = bs(page, 'lxml')
     page_soup.prettify()
 
@@ -667,7 +667,7 @@ def getDailyVIC_livneh2015(homedir, mappingfile, subdir='livneh2015/Daily_VIC_19
     return filedir
 
 
-def getDailyWRF_salathe2014(homedir, mappingfile, subdir='Salathe2014/WWA_1950_2010/raw', catalog_label='dailywrf_salathe2014'):
+def getDailyWRF_salathe2014(homedir, mappingfile, subdir='salathe2014/WWA_1950_2010/raw', catalog_label='dailywrf_salathe2014'):
     """
     Get the Salathe el al., 2014 raw Daily WRF files of interest using the reference mapping file
     
@@ -697,7 +697,7 @@ def getDailyWRF_salathe2014(homedir, mappingfile, subdir='Salathe2014/WWA_1950_2
     return filedir
 
 
-def getDailyWRF_bcsalathe2014(homedir, mappingfile, subdir='Salathe2014/WWA_1950_2010/bc', catalog_label='dailywrf_bcsalathe2014'):
+def getDailyWRF_bcsalathe2014(homedir, mappingfile, subdir='salathe2014/WWA_1950_2010/bc', catalog_label='dailywrf_bcsalathe2014'):
     """
     Get the Salathe el al., 2014 bias corrected Daily WRF files of interest using the reference mapping file
     
@@ -786,7 +786,7 @@ def mappingfileToDF(mappingfile, colvar='all'):
     return map_df, len(map_df)
 
 
-def read_in_all_files(map_df, dataset, metadata, file_start_date, file_end_date, file_time_step, file_colnames, subset_start_date, subset_end_date):
+def read_in_all_files(map_df, dataset, metadata, file_start_date, file_end_date, file_time_step, file_colnames, file_delimiter, subset_start_date, subset_end_date):
     """
     Read in files based on dataset label
     
@@ -803,17 +803,20 @@ def read_in_all_files(map_df, dataset, metadata, file_start_date, file_end_date,
     # extract metadata if the information are not provided
     if pd.notnull(metadata):
         
-        if pd.isnull(file_start_date):
+        if file_start_date is None:
             file_start_date = metadata[dataset]['date_range']['start']
         
-        if pd.isnull(file_end_date):
+        if file_end_date is None:
             file_end_date = metadata[dataset]['date_range']['end']
 
-        if pd.isnull(file_time_step):
+        if file_time_step is None:
             file_time_step = metadata[dataset]['date_range']['time_step']
 
-        file_colnames = metadata[dataset]['variable_list']
-        file_delimiter = metadata[dataset]['delimiter']
+        if file_colnames is None:
+            file_colnames = metadata[dataset]['variable_list']
+        
+        if file_delimiter is None:
+            file_delimiter = metadata[dataset]['delimiter']
    
     #initialize dictionary and time sequence
     df_dict=dict()
@@ -964,7 +967,7 @@ def read_daily_coop(file_name, file_colnames=None, usecols=None, delimiter=',', 
 # ### Data Processing functions
 
 
-def generateVarTables(file_dict, gridclimname, dataset, metadata):
+def generateVarTables(file_dict, gridclimname, dataset, metadata, df_dict=None):
     """
     Slice the files by their common variable
     
@@ -973,10 +976,11 @@ def generateVarTables(file_dict, gridclimname, dataset, metadata):
     metadata (dict) the dictionary that contains the metadata explanations; default is None
     """
     # combine the files into a pandas panel
-    panel = pd.Panel.from_dict(all_files)
+    panel = pd.Panel.from_dict(file_dict)
 
     # initiate output dictionary
-    df_dict = dict()
+    if pd.isnull(df_dict):
+        df_dict = dict()
     
     # slice the panel for each variable in list
     for eachvar in metadata[dataset]['variable_list']:
@@ -1296,7 +1300,8 @@ def gridclim_dict(gridclim_folder,
                   gridclimname=None, dataset=None, 
                   metadata=None,
                   min_elev=None, max_elev=None,
-                  file_start_date=None, file_end_date=None, file_time_step=None,
+                  file_start_date=None, file_end_date=None, file_time_step=None, 
+                  file_colnames=None, file_delimiter=None,
                   subset_start_date=None, subset_end_date=None,
                   df_dict=None):
     """
@@ -1333,17 +1338,20 @@ def gridclim_dict(gridclim_folder,
     # extract metadata if the information are not provided
     if pd.notnull(metadata):
         
-        if pd.isnull(file_start_date):
+        if file_start_date is None:
             file_start_date = metadata[dataset]['date_range']['start']
         
-        if pd.isnull(file_end_date):
+        if file_end_date is None:
             file_end_date = metadata[dataset]['date_range']['end']
 
-        if pd.isnull(file_time_step):
+        if file_time_step is None:
             file_time_step = metadata[dataset]['date_range']['time_step']
 
-        file_colnames = metadata[dataset]['variable_list']
-        file_delimiter = metadata[dataset]['delimiter']
+        if file_colnames is None:
+            file_colnames = metadata[dataset]['variable_list']
+        
+        if file_delimiter is None:
+            file_delimiter = metadata[dataset]['delimiter']
         
     # take all defaults if subset references are null
     if pd.isnull(subset_start_date):
@@ -1383,46 +1391,50 @@ def gridclim_dict(gridclim_folder,
     file_dict = read_in_all_files(map_df=locations_df,
                                   dataset=dataset, 
                                   metadata=metadata, 
-                                  file_start_date=file_start_date, file_end_date=file_end_date, 
-                                  file_time_step=file_time_step, file_colnames=file_colnames, 
-                                  subset_start_date=subset_start_date, subset_end_date=subset_end_date)
+                                  file_start_date=file_start_date, 
+                                  file_end_date=file_end_date, 
+                                  file_delimiter=file_delimiter, 
+                                  file_time_step=file_time_step, 
+                                  file_colnames=file_colnames, 
+                                  subset_start_date=subset_start_date, 
+                                  subset_end_date=subset_end_date)
     
     # assemble the variable dataframes to the dictionary
-    df_dict = generateVarTables(file_dict=file_dict, gridclimname=gridclimname, dataset=dataset, metadata=metadata)
+    df_dict = generateVarTables(file_dict=file_dict, gridclimname=gridclimname, dataset=dataset, metadata=metadata, df_dict=df_dict)
     
     # loop through the dictionary to compute each aggregate_space_time_average object
-    for eachvardf in df_dict.keys():
-        if eachvardf.endswith(gridclimname): # and not eachvardf.startswith('precip'):
-            df_dict = aggregate_space_time_average(VarTable=df_dict[eachvardf],
-                                                   df_dict=df_dict,
-                                                   suffix=eachvardf,
-                                                   elev_min_station=analysis_elev_min_station,
-                                                   elev_mid_station=analysis_elev_mid_station,
-                                                   elev_max_station=analysis_elev_max_station, 
-                                                   start_date=subset_start_date, 
-                                                   end_date=subset_end_date)
-            
+    keys_now = [eachkey for eachkey in df_dict.keys() if eachkey.endswith(gridclimname)]
+    for eachvardf in keys_now:
+        df_dict = aggregate_space_time_average(VarTable=df_dict[eachvardf],
+                                               df_dict=df_dict,
+                                               suffix=eachvardf,
+                                               elev_min_station=analysis_elev_min_station,
+                                               elev_mid_station=analysis_elev_mid_station,
+                                               elev_max_station=analysis_elev_max_station, 
+                                               start_date=subset_start_date, 
+                                               end_date=subset_end_date)
+
     # generate plots
     #plotTavg(df_dict, loc_name,start_date=subset_start_date, end_date=subset_end_date)
     #plotPavg(df_dict, loc_name,start_date=subset_start_date, end_date=subset_end_date)
     return df_dict
 
-def compute_diffs(df_dict, df_str, gridclimname1, gridclimname2, prefix1, prefix2='meanmonth_'):
+def compute_diffs(df_dict, df_str, gridclimname1, gridclimname2, prefix1, prefix2='meanmonth'):
     #Compute difference between monthly means for some data (e.g,. Temp and precip) for two different gridded datasets (e.g., Liv, WRF)
     
     comp_dict=dict()
     for each1 in prefix1:
         for each2 in prefix2:
-            comp_dict[str(each1)+df_str] = df_dict[each2+each1+gridclimname1]-df_dict[each2+each1+gridclimname2]
+            comp_dict['_'.join([str(each1),df_str])] = df_dict['_'.join([each2,each1,gridclimname1])]-df_dict['_'.join([each2,each1,gridclimname2])]
     return comp_dict
 
-def compute_ratios(df_dict, df_str, gridclimname1, gridclimname2, prefix1, prefix2='meanmonth_'):
+def compute_ratios(df_dict, df_str, gridclimname1, gridclimname2, prefix1, prefix2='meanmonth'):
     #Compute difference between monthly means for some data (e.g,. Temp and precip) for two different gridded datasets (e.g., Liv, WRF)
     
     comp_dict=dict()
     for each1 in prefix1:
         for each2 in prefix2:
-            comp_dict[str(each1)+df_str] = df_dict[each2+each1+gridclimname1]/df_dict[each2+each1+gridclimname2]
+            comp_dict['_'.join([str(each1),df_str])] = df_dict['_'.join([each2,each1,gridclimname1])]/df_dict['_'.join([each2,each1,gridclimname2])]
     return comp_dict
 
 def compute_elev_diffs(df_dict, df_str, gridclimname1, prefix1, prefix2a='meanmonth_minelev_', prefix2b='meanmonth_maxelev_'):
@@ -1656,7 +1668,7 @@ def switchUpVICSoil(input_file=None,
     print('Check your home directory for your new VIC soil model input set to your list of Lat/Long grid centroids.')
     
     
-def makebelieve(homedir, mappingfile, BiasCorr,
+def makebelieve_old(homedir, mappingfile, BiasCorr,
                 lowrange='0to1000m', LowElev=range(0,1000),
                 midrange='1000to1500m', MidElev=range(1001,1501),
                 highrange='1500to3000m', HighElev=range(1501,3000),
@@ -1764,6 +1776,92 @@ def makebelieve(homedir, mappingfile, BiasCorr,
     print('just kidding.')
     
     return dest_dir
+
+
+def makebelieve(homedir, mappingfile, BiasCorr, metadata, start_catalog_label, end_catalog_label, 
+                file_start_date=None, file_end_date=None,
+                data_dir=None, dest_dir_suffix=None):
+    np.set_printoptions(precision=6)
+
+    # take liv2013 date set date range as default if file reference dates are not given
+    if file_start_date is None:
+        file_start_date = metadata[start_catalog_label]['date_range']['start']
+
+    if file_end_date is None:
+        file_end_date = metadata[start_catalog_label]['date_range']['end']
+
+    # generate the month vector
+    month = pd.date_range(start=file_start_date, end=file_end_date).month
+    month = pd.DataFrame({'month':month})
+
+    # create NEW directory
+    if dest_dir_suffix is None:
+        dest_dir_suffix = 'biascorr_output/'
+
+    dest_dir = os.path.join(homedir, dest_dir_suffix)
+    if not os.path.exists(dest_dir):
+        os.mkdir(dest_dir)
+        print('destdir created')
+
+    # read in the mappingfile
+    map_df, nstations = mappingfileToDF(mappingfile, colvar='all')
+
+    # compile the BiasCorr dictionary into a pandas panel
+    BiasCorr=pd.Panel.from_dict(BiasCorr)
+
+    # loop through each file
+    for ind, eachfile in enumerate(map_df.loc[:,start_catalog_label]):
+        
+        # identify the file
+        station = map_df.loc[map_df.loc[:,start_catalog_label]==eachfile,['FID', 'LAT', 'LONG_']].reset_index(drop=True)
+
+        # subset the bias correction to the file at hand
+        print(str(ind)+' station: '+str(tuple(station.loc[0,:])))
+        BiasCorr_df = BiasCorr.xs(key=tuple(station.loc[0,:]),axis=2)
+                
+        # read in the file to be corrected
+        read_dat = pd.read_table(eachfile, delimiter=metadata[start_catalog_label]['delimiter'],
+                                 header=None, names=metadata[start_catalog_label]['variable_list'])
+        
+        # extrapolate monthly values for each variable
+        for eachvar in read_dat.columns:
+                        
+            # identify the corresponding bias correction key
+            for eachkey in BiasCorr_df.columns:
+                if eachkey.startswith(eachvar):
+                                
+                    # subset the dataframe to the variable in loop
+                    BiasCorr_subdf = BiasCorr_df.loc[:,eachkey]
+
+                    # regenerate row index as month column
+                    BiasCorr_subdf = BiasCorr_subdf.reset_index().rename(columns={'index':'month'})
+
+                    # generate the s-vector
+                    s = month.merge(BiasCorr_subdf, how='left', on='month').loc[:,eachkey]
+
+                    if eachvar=='PRECIP':
+                        #read_dat[eachvar] = np.multiply(np.array(read_dat[eachvar]), np.array(s))  #Use for ratio precip method
+
+                        read_dat[eachvar] = np.array(read_dat.loc[:,eachvar])+np.array(s) #Use for delta precip method
+                        #positiveprecip=read_dat[eachvar]
+                        #positiveprecip[positiveprecip<0.]=0.
+                        #read_dat[eachvar] = positiveprecip*.9842
+                    else:
+                        read_dat[eachvar] = np.array(read_dat.loc[:,eachvar])+np.array(s)
+
+        # write it out to the new destination location
+        read_dat.to_csv(os.path.join(dest_dir, os.path.basename(eachfile)), sep='\t', header=None, index=False, float_format='%.4f')
+
+    # update the mappingfile with the file catalog
+    addCatalogToMap(outfilepath=mappingfile, maptable=map_df, folderpath=dest_dir, catalog_label=end_catalog_label)
+
+    # append the source metadata to the new catalog label metadata
+    metadata[end_catalog_label] = metadata[start_catalog_label]
+    print('mission complete. this device will now self-destruct.')
+    print('just kidding.')
+
+    return dest_dir, metadata
+
 
 def plot_meanP(dictionary, loc_name, start_date, end_date):
     # Plot 1: Monthly temperature analysis of Livneh data
