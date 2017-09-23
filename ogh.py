@@ -1843,9 +1843,9 @@ def makebelieve(homedir, mappingfile, BiasCorr, metadata, start_catalog_label, e
                         #read_dat[eachvar] = np.multiply(np.array(read_dat[eachvar]), np.array(s))  #Use for ratio precip method
 
                         read_dat[eachvar] = np.array(read_dat.loc[:,eachvar])+np.array(s) #Use for delta precip method
-                        #positiveprecip=read_dat[eachvar]
-                        #positiveprecip[positiveprecip<0.]=0.
-                        #read_dat[eachvar] = positiveprecip*.9842
+                        positiveprecip=read_dat[eachvar]
+                        positiveprecip[positiveprecip<0.]=0.
+                        read_dat[eachvar] = positiveprecip
                     else:
                         read_dat[eachvar] = np.array(read_dat.loc[:,eachvar])+np.array(s)
 
